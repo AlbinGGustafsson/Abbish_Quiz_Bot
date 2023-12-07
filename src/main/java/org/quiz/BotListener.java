@@ -1,9 +1,13 @@
 package org.quiz;
 
+import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
+import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
+import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -15,23 +19,12 @@ import java.util.List;
 public class BotListener extends ListenerAdapter {
 
     private final AudioPlayerManager playerManager;
-    private final AudioPlayer player;
     private List<QuizGame> quizGameList;
 
     public BotListener() {
         this.quizGameList = new ArrayList<>();
         this.playerManager = new DefaultAudioPlayerManager();
-        this.player = playerManager.createPlayer();
         AudioSourceManagers.registerRemoteSources(playerManager);
-    }
-
-    private AudioManager joinChannel(MessageReceivedEvent event) {
-        AudioManager audioManager = event.getGuild().getAudioManager();
-        if (!audioManager.isConnected()) {
-            audioManager.openAudioConnection(event.getMember().getVoiceState().getChannel());
-        }
-        audioManager.setSendingHandler(new AudioPlayerSendHandler(player));
-        return audioManager;
     }
 
     private QuizGame getGame(MessageReceivedEvent event) {
@@ -59,6 +52,32 @@ public class BotListener extends ListenerAdapter {
 
         if (event.getAuthor().isBot()) {
             return;
+        }
+
+        if (command.equals("!test")){
+            AudioPlayer player = playerManager.createPlayer();
+
+            playerManager.loadItem("https://www.youtube.com/watch?v=lC6aZfX4dG4", new AudioLoadResultHandler() {
+                @Override
+                public void trackLoaded(AudioTrack audioTrack) {
+                    player.playTrack(audioTrack);
+                }
+
+                @Override
+                public void playlistLoaded(AudioPlaylist audioPlaylist) {
+
+                }
+
+                @Override
+                public void noMatches() {
+
+                }
+
+                @Override
+                public void loadFailed(FriendlyException e) {
+
+                }
+            });
         }
 
         if (command[0].equals("!startgame")) {

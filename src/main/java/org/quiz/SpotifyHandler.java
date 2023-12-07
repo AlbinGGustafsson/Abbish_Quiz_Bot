@@ -49,8 +49,6 @@ public class SpotifyHandler {
         }
     }
 
-
-
     public List<String> getTrackInfoList(String url) {
         ensureTokenIsValid();
         List<String> trackIds = new ArrayList<>();

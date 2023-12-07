@@ -11,8 +11,12 @@ import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.managers.AudioManager;
 
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class QuizGame extends AudioEventAdapter {
 
@@ -27,6 +31,9 @@ public class QuizGame extends AudioEventAdapter {
     private Map<User, PrivateChannel> gameMembersPrivateChannels = new HashMap<>();
     private MessageReceivedEvent startGameEvent;
     private LinkedList<AudioTrack> gameSongQueue = new LinkedList<>();
+    private List<String> trackInfoList = new ArrayList<>();
+
+    private int songCount = 0;
 
     private boolean gameStarted = false;
 
@@ -39,7 +46,18 @@ public class QuizGame extends AudioEventAdapter {
         this.gameMaster = startGameEvent.getMember();
         this.audioChannel = gameMaster.getVoiceState().getChannel();
         this.gameMembers = audioChannel.getMembers();
+        player.addListener(this);
+
         startGame();
+    }
+
+    private AudioManager joinChannel(MessageReceivedEvent event) {
+        AudioManager audioManager = event.getGuild().getAudioManager();
+        if (!audioManager.isConnected()) {
+            audioManager.openAudioConnection(event.getMember().getVoiceState().getChannel());
+        }
+        audioManager.setSendingHandler(new AudioPlayerSendHandler(player));
+        return audioManager;
     }
 
     private void startGame() {
@@ -84,18 +102,33 @@ public class QuizGame extends AudioEventAdapter {
         System.out.println("handleGameMasterMessage");
     }
 
+    private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+
     private void handlePrivateGameMasterMessage(MessageReceivedEvent event) {
+        if (gameStarted){
+            return;
+        }
         System.out.println("handlePrivateGameMasterMessage");
 
         String message = event.getMessage().getContentRaw();
         String[] command = message.split(" ");
 
         if (command[0].equals("!add") && command.length == 2) {
-            List<String> trackInfoList = spotifyHandler.getTrackInfoList(command[1]);
-            System.out.println(trackInfoList);
+            trackInfoList = spotifyHandler.getTrackInfoList(command[1]);
             List<AudioTrack> tracks = trackLoader.getTracks(trackInfoList);
-            tracks.forEach(t -> System.out.println(t.getInfo().title));
+            gameSongQueue.addAll(tracks);
+
+            event.getChannel().sendMessage(tracks.size() + " songs added\n" + trackInfoList + "\n").queue();
         }
+
+        if (message.equals("!start")){
+            joinChannel(startGameEvent);
+            //MusicPlayerUtil.playTrackForDuration(player, gameSongQueue.poll(), 10000, 10);
+
+            startGameEvent.getChannel().sendMessage("Game on!").queue();
+            player.playTrack(gameSongQueue.poll()); // Cloning the track so we can manipulate it without affecting the original
+        }
+
     }
 
     public void sendMessageToUser(User user, String message) {
@@ -115,7 +148,6 @@ public class QuizGame extends AudioEventAdapter {
 
     @Override
     public void onPlayerPause(AudioPlayer player) {
-        // Player was paused
     }
 
     @Override
@@ -125,13 +157,19 @@ public class QuizGame extends AudioEventAdapter {
 
     @Override
     public void onTrackStart(AudioPlayer player, AudioTrack track) {
-        // A track started playing
+        songCount++;
+        startGameEvent.getChannel().sendMessage("Song " + songCount + " of " + trackInfoList.size()).queue();
+        player.getPlayingTrack().setPosition(10000);
+        scheduler.schedule(() -> player.stopTrack(), 10, TimeUnit.SECONDS);
     }
 
     @Override
     public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
         if (endReason.mayStartNext) {
+
         }
+        startGameEvent.getChannel().sendMessage("The song was: " + trackInfoList.get(songCount-1) + "! Starting next song").queue();
+        player.playTrack(gameSongQueue.poll());
     }
 
     public AudioChannel getAudioChannel() {
