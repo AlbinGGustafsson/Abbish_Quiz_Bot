@@ -79,10 +79,12 @@ public class SpotifyHandler {
 
             StringBuilder artistsStringBuilder = new StringBuilder();
             for (ArtistSimplified artist : artists) {
-                artistsStringBuilder.append(artist.getName()).append(" ");
+                artistsStringBuilder.append(artist.getName()).append(":");
             }
-
-            return track.getName() + " " + artistsStringBuilder.toString().trim();
+            if (artistsStringBuilder.length() > 0) {
+                artistsStringBuilder.setLength(artistsStringBuilder.length() - 1);
+            }
+            return track.getName() + ";" + artistsStringBuilder;
         } catch (Exception e) {
             throw new RuntimeException("Error fetching track info: " + e.getMessage());
         }
