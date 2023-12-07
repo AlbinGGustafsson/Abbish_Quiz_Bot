@@ -49,24 +49,32 @@ public class SpotifyHandler {
         }
     }
 
-    public String extractTrackId(String url) {
-        ensureTokenIsValid();
-        Pattern pattern = Pattern.compile("spotify\\.com/track/([a-zA-Z0-9]+)");
-        Matcher matcher = pattern.matcher(url);
-        if (matcher.find()) {
-            return matcher.group(1);
-        } else {
-            throw new RuntimeException();
-        }
-    }
 
-    public List<String> getTrackIdsFromPlaylistOrAlbum(String url) {
+
+    public List<String> getTrackInfoList(String url) {
         ensureTokenIsValid();
+        List<String> trackIds = new ArrayList<>();
         String id = extractIdFromUrl(url);
-        return url.contains("playlist") ? getTrackInfoFromPlaylist(id) : getTrackInfoFromAlbum(id);
+
+        if (url.contains("track")) {
+            // Extract single track ID from track URL
+            String trackId = getTrackInfo(id);
+            trackIds.add(trackId);
+        } else {
+            // Extract IDs from playlist or album URL
+            if (url.contains("playlist")) {
+                trackIds.addAll(getTrackInfoFromPlaylist(id));
+            } else if (url.contains("album")) {
+                trackIds.addAll(getTrackInfoFromAlbum(id));
+            } else {
+                throw new RuntimeException("Invalid Spotify URL");
+            }
+        }
+
+        return trackIds;
     }
 
-    public String getTrackInfo(String trackId) {
+    private String getTrackInfo(String trackId) {
         try {
             Track track = spotifyApi.getTrack(trackId).build().execute();
             ArtistSimplified[] artists = track.getArtists();
@@ -76,14 +84,14 @@ public class SpotifyHandler {
                 artistsStringBuilder.append(artist.getName()).append(" ");
             }
 
-            return track.getName() + " by " + artistsStringBuilder.toString().trim();
+            return track.getName() + " " + artistsStringBuilder.toString().trim();
         } catch (Exception e) {
             throw new RuntimeException("Error fetching track info: " + e.getMessage());
         }
     }
 
     private String extractIdFromUrl(String url) {
-        Pattern pattern = Pattern.compile("spotify\\.com/(playlist|album)/([a-zA-Z0-9]+)");
+        Pattern pattern = Pattern.compile("spotify\\.com/(playlist|album|track)/([a-zA-Z0-9]+)");
         Matcher matcher = pattern.matcher(url);
         if (matcher.find()) {
             return matcher.group(2);

@@ -16,7 +16,9 @@ import java.util.*;
 
 public class QuizGame extends AudioEventAdapter {
 
+    private TrackLoader trackLoader;
     private String gameId;
+    private SpotifyHandler spotifyHandler;
 
     private Member gameMaster;
     private AudioChannel audioChannel;
@@ -29,12 +31,14 @@ public class QuizGame extends AudioEventAdapter {
     private boolean gameStarted = false;
 
     public QuizGame(MessageReceivedEvent startGameEvent, AudioPlayerManager playerManager, String gameId) {
+        this.trackLoader = new TrackLoader(playerManager);
+        this.spotifyHandler = new SpotifyHandler();
+        this.player = playerManager.createPlayer();
         this.startGameEvent = startGameEvent;
         this.gameId = gameId;
         this.gameMaster = startGameEvent.getMember();
         this.audioChannel = gameMaster.getVoiceState().getChannel();
-        this.player = playerManager.createPlayer();
-        gameMembers = audioChannel.getMembers();
+        this.gameMembers = audioChannel.getMembers();
         startGame();
     }
 
@@ -70,7 +74,7 @@ public class QuizGame extends AudioEventAdapter {
     }
 
     private void handleMemberPrivateMessage(MessageReceivedEvent event) {
-        if (!gameStarted){
+        if (!gameStarted) {
             event.getChannel().sendMessage("Wait for gamemaster to start the game").queue();
         }
         System.out.println("handleMemberPrivateMessage");
@@ -82,6 +86,16 @@ public class QuizGame extends AudioEventAdapter {
 
     private void handlePrivateGameMasterMessage(MessageReceivedEvent event) {
         System.out.println("handlePrivateGameMasterMessage");
+
+        String message = event.getMessage().getContentRaw();
+        String[] command = message.split(" ");
+
+        if (command[0].equals("!add") && command.length == 2) {
+            List<String> trackInfoList = spotifyHandler.getTrackInfoList(command[1]);
+            System.out.println(trackInfoList);
+            List<AudioTrack> tracks = trackLoader.getTracks(trackInfoList);
+            tracks.forEach(t -> System.out.println(t.getInfo().title));
+        }
     }
 
     public void sendMessageToUser(User user, String message) {
@@ -143,7 +157,6 @@ public class QuizGame extends AudioEventAdapter {
 
         return String.format("Game Id: %s Channel: %s Game Master: %s Players: %s", gameId, audioChannel.getName(), gameMasterMention, members);
     }
-
 
 
 }
