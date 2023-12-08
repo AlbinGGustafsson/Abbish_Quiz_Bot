@@ -33,6 +33,8 @@ public class QuizGame extends AudioEventAdapter {
     private Map<User, PrivateChannel> gameMembersPrivateChannels = new HashMap<>();
     private MessageReceivedEvent startGameEvent;
     private LinkedList<AudioTrack> gameSongQueue = new LinkedList<>();
+
+    private List<String> subTrackInfoList = new ArrayList<>();
     private List<String> trackInfoList = new ArrayList<>();
 
     private List<GameRound> gameRounds = new ArrayList<>();
@@ -126,11 +128,19 @@ public class QuizGame extends AudioEventAdapter {
         }
 
         if (command[0].equals("!add") && command.length == 2) {
-            trackInfoList = spotifyHandler.getTrackInfoList(command[1]);
-            List<AudioTrack> tracks = trackLoader.getTracks(trackInfoList);
+            subTrackInfoList = spotifyHandler.getTrackInfoList(command[1]);
+            List<AudioTrack> tracks = trackLoader.getTracks(subTrackInfoList);
             gameSongQueue.addAll(tracks);
+            trackInfoList.addAll(subTrackInfoList);
 
-            event.getChannel().sendMessage(tracks.size() + " songs added\n" + trackInfoList + "\n").queue();
+            event.getChannel().sendMessage(tracks.size() + " songs added\n" + subTrackInfoList + "\n" + gameSongQueue.size() +  " songs in total").queue();
+        }
+
+        if (message.equals("!list")){
+            StringBuilder stringBuilder = new StringBuilder();
+            gameSongQueue.forEach(t -> stringBuilder.append(t.getInfo().title).append(" ").append(t.getInfo().author).append("\n"));
+            event.getChannel().sendMessage(stringBuilder).queue();
+
         }
 
         if (message.equals("!start")) {
@@ -140,7 +150,6 @@ public class QuizGame extends AudioEventAdapter {
             startGameEvent.getChannel().sendMessage("Game on!").queue();
             player.playTrack(gameSongQueue.poll()); // Cloning the track so we can manipulate it without affecting the original
         }
-
     }
 
     public void sendMessageToUser(User user, String message) {
