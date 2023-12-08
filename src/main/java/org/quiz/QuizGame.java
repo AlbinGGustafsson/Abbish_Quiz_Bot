@@ -202,6 +202,10 @@ public class QuizGame extends AudioEventAdapter {
         return ids;
     }
 
+    public String getGameId() {
+        return gameId;
+    }
+
     @Override
     public String toString() {
         StringBuilder members = new StringBuilder();

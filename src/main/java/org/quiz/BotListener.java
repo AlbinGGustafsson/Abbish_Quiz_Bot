@@ -1,17 +1,11 @@
 package org.quiz;
 
-import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
-import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
-import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import net.dv8tion.jda.api.managers.AudioManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,36 +48,16 @@ public class BotListener extends ListenerAdapter {
             return;
         }
 
-        if (command.equals("!test")){
-            AudioPlayer player = playerManager.createPlayer();
-
-            playerManager.loadItem("https://www.youtube.com/watch?v=lC6aZfX4dG4", new AudioLoadResultHandler() {
-                @Override
-                public void trackLoaded(AudioTrack audioTrack) {
-                    player.playTrack(audioTrack);
-                }
-
-                @Override
-                public void playlistLoaded(AudioPlaylist audioPlaylist) {
-
-                }
-
-                @Override
-                public void noMatches() {
-
-                }
-
-                @Override
-                public void loadFailed(FriendlyException e) {
-
-                }
-            });
+        if (command[0].equals("!stop") && command.length == 2){
+            String gameId = command[1];
+            quizGameList.removeIf(game -> gameId.equals(game.getGameId()));
+            event.getChannel().sendMessage(gameId + " stopped").queue();
         }
 
         if (command[0].equals("!startgame")) {
 
             if (gameExistsInGuild(event.getGuild())){
-                event.getChannel().sendMessage("Already a game in: " + event.getMember().getVoiceState().getChannel().getName()).queue();
+                event.getChannel().sendMessage("Already a game in: " + event.getMember().getVoiceState().getChannel().getName() + " (" + getGame(event).getGameId() + ")").queue();
                 return;
             }
 
