@@ -39,8 +39,8 @@ public class QuizGame extends AudioEventAdapter {
 
     private int songCount = 0;
 
-    private long songStartPos = 10000;
-    private int songDuration = 20;
+    private long songStartPos = 20000;
+    private int songDuration = 35;
 
     private boolean gameStarted = false;
 
@@ -103,6 +103,7 @@ public class QuizGame extends AudioEventAdapter {
     private void handleMemberPrivateMessage(MessageReceivedEvent event) {
         if (!gameStarted) {
             event.getChannel().sendMessage("Wait for gamemaster to start the game").queue();
+            return;
         }
 
         gameRounds.get(songCount - 1).handleGuess(event);
