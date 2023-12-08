@@ -44,8 +44,6 @@ public class QuizGame extends AudioEventAdapter {
 
     private boolean gameStarted = false;
 
-    private boolean gameMasterPlaying = false;
-
     public QuizGame(MessageReceivedEvent startGameEvent, AudioPlayerManager playerManager, String gameId) {
         this.trackLoader = new TrackLoader(playerManager);
         this.spotifyHandler = new SpotifyHandler();
@@ -122,9 +120,9 @@ public class QuizGame extends AudioEventAdapter {
         String message = event.getMessage().getContentRaw();
         String[] command = message.split(" ");
 
-        if (message.equals("!playing")){
-            gameMasterPlaying = true;
-
+        if (gameStarted){
+            gameRounds.get(songCount - 1).handleGuess(event);
+            return;
         }
 
         if (command[0].equals("!add") && command.length == 2) {
