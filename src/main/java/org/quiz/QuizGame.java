@@ -180,10 +180,10 @@ public class QuizGame extends AudioEventAdapter {
     @Override
     public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
         if (endReason.mayStartNext) {
-            // ...
+            // ... (your existing code here)
         }
-
-        Map<Member, Double> roundScore = gameRounds.get(songCount - 1).getScore();
+        // Updated to handle the new score structure
+        Map<Member, Map<String, Double>> roundScore = gameRounds.get(songCount - 1).getScore();
         String formattedScores = GameRound.formatScores(roundScore);
         startGameEvent.getChannel().sendMessage(formattedScores).queue();
 

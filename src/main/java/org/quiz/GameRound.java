@@ -63,47 +63,53 @@ public class GameRound {
     }
 
     private boolean isGuessApproximatelyCorrect(String guess, String correctAnswer) {
+        // Remove details in parentheses or brackets
+        String simplifiedAnswer = correctAnswer.replaceAll("\\(.*?\\)|\\[.*?\\]", "").trim();
+
         LevenshteinDistance levenshteinDistance = new LevenshteinDistance();
-        int distance = levenshteinDistance.apply(guess, correctAnswer);
-        double similarity = 1.0 - (double) distance / correctAnswer.length();
-        return similarity >= 0.5;
+        int distance = levenshteinDistance.apply(guess, simplifiedAnswer);
+        double similarity = 1.0 - (double) distance / simplifiedAnswer.length();
+        return similarity >= 0.7;
     }
     private double calculateTimeDifferenceInSeconds(long startTime, long endTime) {
         double differenceInMillis = endTime - startTime;
         return Math.round(differenceInMillis / 1000.0 * 100.0) / 100.0;
     }
 
-    public Map<Member, Double> getScore() {
-        Map<Member, Double> scores = new LinkedHashMap<>();
+    public Map<Member, Map<String, Double>> getScore() {
+        Map<Member, Map<String, Double>> scores = new LinkedHashMap<>();
         double bonusForBoth = 5.0; // Set a bonus value
 
         // Calculate scores from guesses
         for (Member member : gameMembers) {
             String memberId = member.getId();
+            Map<String, Double> memberScore = new LinkedHashMap<>();
             double score = 0.0;
-            boolean guessedTitle = false;
-            boolean guessedArtist = false;
+            Double titleTime = null;
+            Double artistTime = null;
 
             // Check title guess
             if (titleTimeMap.containsKey(memberId)) {
-                double time = titleTimeMap.get(memberId);
-                score += time > 0 ? (1 / time) * 10 : 0; // Score multiplied by 10
-                guessedTitle = true;
+                titleTime = titleTimeMap.get(memberId);
+                score += titleTime > 0 ? (1 / titleTime) * 10 : 0; // Score multiplied by 10
             }
 
             // Check artist guess
             if (artistTimeMap.containsKey(memberId)) {
-                double time = artistTimeMap.get(memberId);
-                score += time > 0 ? (1 / time) * 10 : 0; // Score multiplied by 10
-                guessedArtist = true;
+                artistTime = artistTimeMap.get(memberId);
+                score += artistTime > 0 ? (1 / artistTime) * 10 : 0; // Score multiplied by 10
             }
 
             // Add bonus if both title and artist are guessed
-            if (guessedTitle && guessedArtist) {
+            if (titleTime != null && artistTime != null) {
                 score += bonusForBoth;
             }
 
-            scores.put(member, score);
+            memberScore.put("Score", score);
+            memberScore.put("TitleTime", titleTime);
+            memberScore.put("ArtistTime", artistTime);
+
+            scores.put(member, memberScore);
         }
         return scores;
     }
@@ -113,11 +119,12 @@ public class GameRound {
 
         // Aggregate scores from each round
         for (GameRound round : gameRounds) {
-            round.getScore().forEach((member, score) ->
-                    totalScores.merge(member, score, Double::sum));
+            round.getScore().forEach((member, scoreMap) -> {
+                totalScores.merge(member, scoreMap.getOrDefault("Score", 0.0), Double::sum);
+            });
         }
 
-        // Sort the total scores in descending order
+        // Sort the total scores in descending order by Score
         Stream<Map.Entry<Member, Double>> sorted = totalScores.entrySet().stream()
                 .sorted(Map.Entry.<Member, Double>comparingByValue().reversed());
 
@@ -128,6 +135,7 @@ public class GameRound {
         sorted.forEach(entry -> {
             Member member = entry.getKey();
             Double score = entry.getValue();
+
             totalScoreMessage.append(member.getEffectiveName())
                     .append(": ")
                     .append(String.format("%.2f", score))
@@ -137,10 +145,10 @@ public class GameRound {
         return totalScoreMessage.toString();
     }
 
-    public static String formatScores(Map<Member, Double> roundScore) {
-        // Create a stream from the entry set, sort it in descending order by value (score)
-        Stream<Map.Entry<Member, Double>> sorted = roundScore.entrySet().stream()
-                .sorted(Map.Entry.<Member, Double>comparingByValue().reversed());
+    public static String formatScores(Map<Member, Map<String, Double>> roundScore) {
+        // Create a stream from the entry set, sort it in descending order by score
+        Stream<Map.Entry<Member, Map<String, Double>>> sorted = roundScore.entrySet().stream()
+                .sorted((entry1, entry2) -> entry2.getValue().get("Score").compareTo(entry1.getValue().get("Score")));
 
         StringBuilder scoreMessage = new StringBuilder();
         scoreMessage.append("🎵 Round Scores 🎵\n");
@@ -148,12 +156,28 @@ public class GameRound {
         // Iterate through each sorted entry and append it to the StringBuilder
         sorted.forEach(entry -> {
             Member member = entry.getKey();
-            Double score = entry.getValue();
+            Map<String, Double> scores = entry.getValue();
+            Double score = scores.get("Score");
+            Double titleTime = scores.get("TitleTime");
+            Double artistTime = scores.get("ArtistTime");
 
             scoreMessage.append(member.getEffectiveName())
                     .append(": ")
                     .append(String.format("%.2f", score))
-                    .append("\n");
+                    .append(" (");
+
+            if (artistTime != null) {
+                scoreMessage.append("Artist: ")
+                        .append(String.format("%.2f", artistTime))
+                        .append(" ");
+            }
+
+            if (titleTime != null) {
+                scoreMessage.append(" Title ")
+                        .append(String.format("%.2f", titleTime));
+            }
+
+            scoreMessage.append(")\n");
         });
 
         return scoreMessage.toString();
