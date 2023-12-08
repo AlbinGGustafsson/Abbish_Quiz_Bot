@@ -138,7 +138,7 @@ public class QuizGame extends AudioEventAdapter {
 
         if (message.equals("!list")){
             StringBuilder stringBuilder = new StringBuilder();
-            gameSongQueue.forEach(t -> stringBuilder.append(t.getInfo().title).append(" ").append(t.getInfo().author).append("\n"));
+            trackInfoList.forEach(t -> stringBuilder.append(t).append("\n"));
             event.getChannel().sendMessage(stringBuilder).queue();
 
         }
