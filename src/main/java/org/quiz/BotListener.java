@@ -50,6 +50,11 @@ public class BotListener extends ListenerAdapter {
 
         if (command[0].equals("!stop") && command.length == 2){
             String gameId = command[1];
+            quizGameList.forEach(game -> {
+                if (gameId.equals(game.getGameId())){
+                    game.leaveChannel(event);
+                }
+            });
             quizGameList.removeIf(game -> gameId.equals(game.getGameId()));
             event.getChannel().sendMessage(gameId + " stopped").queue();
         }

@@ -69,6 +69,13 @@ public class QuizGame extends AudioEventAdapter {
         return audioManager;
     }
 
+    public void leaveChannel(MessageReceivedEvent event) {
+        AudioManager audioManager = event.getGuild().getAudioManager();
+        if (audioManager.isConnected()) {
+            audioManager.closeAudioConnection();
+        }
+    }
+
     private void startGame() {
         User user = gameMaster.getUser();
         sendMessageToUser(user, "Provide spotify links by doing !add spotify-url\n(!start when done)");
@@ -144,6 +151,11 @@ public class QuizGame extends AudioEventAdapter {
         }
 
         if (message.equals("!start")) {
+
+            if (gameSongQueue.isEmpty()){
+                event.getChannel().sendMessage("You need to add some songs first!").queue();
+                return;
+            }
             gameStarted = true;
             joinChannel(startGameEvent);
             //MusicPlayerUtil.playTrackForDuration(player, gameSongQueue.poll(), 10000, 10);
