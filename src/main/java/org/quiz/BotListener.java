@@ -53,6 +53,7 @@ public class BotListener extends ListenerAdapter {
             quizGameList.forEach(game -> {
                 if (gameId.equals(game.getGameId())){
                     game.leaveChannel(event);
+                    game.stopGame();
                 }
             });
             quizGameList.removeIf(game -> gameId.equals(game.getGameId()));

@@ -190,6 +190,9 @@ public class QuizGame extends AudioEventAdapter {
 
     @Override
     public void onTrackStart(AudioPlayer player, AudioTrack track) {
+        if (!gameStarted){
+            return;
+        }
         GameRound gameRound = new GameRound(trackInfoList.get(songCount), gameMembers);
         gameRounds.add(gameRound);
         songCount++;
@@ -200,6 +203,9 @@ public class QuizGame extends AudioEventAdapter {
 
     @Override
     public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
+        if (!gameStarted){
+            return;
+        }
         if (endReason.mayStartNext) {
             // ... (your existing code here)
         }
@@ -210,6 +216,10 @@ public class QuizGame extends AudioEventAdapter {
 
         startGameEvent.getChannel().sendMessage("The song was: " + trackInfoList.get(songCount - 1) + "! Starting next song").queue();
         player.playTrack(gameSongQueue.poll());
+    }
+
+    public void stopGame(){
+        gameStarted = false;
     }
 
     public AudioChannel getAudioChannel() {
