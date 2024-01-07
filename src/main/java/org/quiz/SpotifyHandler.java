@@ -14,8 +14,8 @@ import java.util.regex.Pattern;
 
 public class SpotifyHandler {
 
-    private final String clientId = "3e0633ab28cc42578c77efd03cdb7fb5";
-    private final String clientSecret = "32ea65e4149740669d18f7780f291f6d";
+    private final String clientId = "CLIENT_ID";
+    private final String clientSecret = "CLIENT_SECRET";
 
     private SpotifyApi spotifyApi;
 

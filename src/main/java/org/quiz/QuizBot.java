@@ -17,7 +17,7 @@ public class QuizBot {
 
     public static void main(String[] args) {
 
-        JDABuilder builder = JDABuilder.createDefault("MTE4MjMzMzUzMzU3OTEyMDc1Mw.Gml6fq.TUdFo-TZYxCFAt9gB_s3OLUFAjm4mFvLqpn5Dc", Arrays.asList(INTENTS));
+        JDABuilder builder = JDABuilder.createDefault("DISCORD_API_TOKEN", Arrays.asList(INTENTS));
         builder.enableCache(CacheFlag.VOICE_STATE);
         builder.setBulkDeleteSplittingEnabled(false);
         builder.setActivity(Activity.playing("chilling"));
